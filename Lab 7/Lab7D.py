@@ -3,10 +3,12 @@ import sys
 import re
 import os
 import json
+import argparse
 
 
-def get_response_from(host: str, port: int, buffer_size: int, request: bytes) -> str:
+def get_response_from(host: str, port: int, buffer_size: int) -> str:
     soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    request = f"GET / HTTP/1.1\r\nHost: {host}\r\nConnection: close\r\n\r\n".encode()
     try:
         soc.connect((host, port))
         soc.send(request)
@@ -116,18 +118,23 @@ def download_image(img_url: str, host: str, buffer_size: int = 1024) -> None:
 
 
 def main() -> None:
-    host = sys.argv[1]
-    port = int(sys.argv[2])
-    file_name = sys.argv[3]
+    argument_parser = argparse.ArgumentParser(
+        description="Get Image from HTTP client")
+    argument_parser.add_argument("host", help="The host of the server")
+    argument_parser.add_argument(
+        "port", help="The port of the server, default is 80", default=80)
+    argument_parser.add_argument(
+        "file_name", help="The json file name for the response, default is index.json", default="index.json")
+    arguments = argument_parser.parse_args()
     buffer_size = 65535
-    response = f"GET / HTTP/1.1\r\nHost: {host}\r\nConnection: close\r\n\r\n".encode()
-    http_response = get_response_from(host, port, buffer_size, response)
+    http_response = get_response_from(
+        arguments.host, int(arguments.port), buffer_size)
     parsed_response = parse_http_header(http_response)
     display_header(parsed_response)
-    write_to_file(parsed_response, file_name)
+    write_to_file(parsed_response, arguments.file_name)
     extracted_image = extract_image_tag(parsed_response["content"])
     for image in extracted_image:
-        download_image(image, host, buffer_size)
+        download_image(image, arguments.host, buffer_size)
 
 
 if __name__ == "__main__":
