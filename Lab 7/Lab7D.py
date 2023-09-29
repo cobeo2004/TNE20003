@@ -106,13 +106,13 @@ def download_image(img_url: str, host: str, buffer_size: int = 1024) -> None:
         print(f"Failed to retrieve data {img_url}: {exception}")
 
     header, img_data = response.split(b'\r\n\r\n', 1)
-    if b"200 OK" not in header:
+    if b"200 OK" in header:
+        with open(img_name, 'wb') as img_file:
+            img_file.write(img_data)
+        print(f"Image {img_name} downloaded successfully!")
+    else:
         print(
             f"Failed to download {img_url}: Server responded with {header.split(b' ', 2)[1]}")
-
-    with open(img_name, 'wb') as img_file:
-        img_file.write(img_data)
-    print(f"Image {img_name} downloaded successfully!")
 
 
 def main() -> None:
