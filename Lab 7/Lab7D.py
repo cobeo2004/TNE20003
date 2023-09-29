@@ -120,11 +120,11 @@ def download_image(img_url: str, host: str, buffer_size: int = 1024) -> None:
 def main() -> None:
     argument_parser = argparse.ArgumentParser(
         description="Get Image from HTTP client")
-    argument_parser.add_argument("host", help="The host of the server")
+    argument_parser.add_argument("--host", help="The host of the server")
     argument_parser.add_argument(
-        "port", help="The port of the server, default is 80", default=80)
+        "--port", help="The port of the server, default is 80", default=80)
     argument_parser.add_argument(
-        "file_name", help="The json file name for the response, default is index.json", default="index.json")
+        "--file_name", help="The json file name for the response, default is index.json", default="index.json")
     arguments = argument_parser.parse_args()
     buffer_size = 65535
     http_response = get_response_from(
