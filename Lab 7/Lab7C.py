@@ -51,7 +51,7 @@ def display_header(parsed_header: dict) -> None:
     print(f"HTTP Content:")
     for value, content in parsed_header["headers"].items():
         print(f"{value}: {content}")
-    if int(status_code) == 200:
+    if status_code == 200:
         print("\nHTML Content:")
         print(parsed_header["content"])
     else:
@@ -69,8 +69,8 @@ def write_to_file(response: str | dict, file_name: str = "response.json") -> str
 
 def main() -> None:
     host: str = sys.argv[1]
-    port: int = 80
-    file_name: str = sys.argv[2]
+    port: int = int(sys.argv[2])
+    file_name: str = sys.argv[3]
     buffer_size = 65535
     response: bytes = f"GET / HTTP/1.1\r\nHost: {host}\r\n\r\n".encode()
     http_response = get_response_from(host, port, buffer_size, response)

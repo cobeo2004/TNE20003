@@ -1,0 +1,16 @@
+{
+  "status": "200",
+  "message": "OK",
+  "headers": {
+    "Date": "Fri, 29 Sep 2023 16:09:24 GMT",
+    "Server": "Apache/2.4.57 ()",
+    "Upgrade": "h2,h2c",
+    "Connection": "Upgrade, close",
+    "Last-Modified": "Fri, 29 Sep 2023 15:28:48 GMT",
+    "ETag": "\"11e-6068114b4c84d\"",
+    "Accept-Ranges": "bytes",
+    "Content-Length": "286",
+    "Content-Type": "text/html; charset=UTF-8"
+  },
+  "content": "<!DOCTYPE html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>Test HTML Image</title>\n  </head>\n  <body>\n    <h1>TEST IMAGE</h1>\n    <img src=\"./sad.jpg\" alt=\"anh-suy\" />\n  </body>\n</html>\n"
+}

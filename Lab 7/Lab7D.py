@@ -2,18 +2,22 @@ import socket
 import sys
 import re
 import os
+import json
 
 
 def get_response_from(host: str, port: int, buffer_size: int, request: bytes) -> str:
     soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    soc.connect((host, port))
-    soc.send(request)
-    response: bytes = b""
-    while True:
-        data = soc.recv(buffer_size)
-        if not data:
-            break
-        response += data
+    try:
+        soc.connect((host, port))
+        soc.send(request)
+        response = b""
+        while True:
+            data = soc.recv(buffer_size)
+            if not data:
+                break
+            response += data
+    except Exception as exception:
+        print(f"Failed to retreive {host}: {exception}")
 
     soc.close()
     return response.decode()
@@ -44,7 +48,7 @@ def parse_http_header(response: str) -> dict:
 
 
 def display_header(parsed_header: dict) -> None:
-    status_code = parsed_header["status"]
+    status_code = int(parsed_header["status"])
     message = parsed_header["message"]
 
     print(f"HTTP Response Code: {status_code}")
@@ -59,37 +63,71 @@ def display_header(parsed_header: dict) -> None:
         print(parsed_header["content"])
 
 
-def write_to_file(response: str, file_name: str = "index.json") -> str:
-
+def write_to_file(response: str, file_name: str = "index.json") -> None:
     try:
         with open(file_name, "x") as file:
-            file.write(response)
-            return f"File name {file_name} is successfully created and successfully written!"
+            json.dump(response, file)
+            print(
+                f"File name {file_name} is successfully created and successfully written!")
     except FileExistsError:
-        return f"File name {file_name} is already exists, thus halted the writing process!"
+        print(
+            f"File name {file_name} is already exists, thus halted the writing process!")
 
 
-def extract_image_tags(http_content: str) -> dict:
-    return re.findall(r'<img [^>]*src ="([^"]*)"[^>]*>', http_content)
+def extract_image_tag(http_content: str) -> dict:
+    return re.findall(r'<img[^>]+src="([^">]+)"', http_content)
 
 
-def download_images(socket_host: str, socket_port: int, url: str, base_url: str, save_folder: str = "downloaded_images") -> None:
-    if not os.path.exists(save_folder):
-        os.makedirs(save_folder)
+def download_image(img_url: str, host: str, buffer_size: int = 1024) -> None:
+    soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    if img_url.startswith("http"):
+        match = re.match(r'http://([^/]+)(/.*)', img_url)
+        if not match:
+            print(f"Skipping invalid URL: {img_url}")
+        host, path = match.groups()
+    else:
+        if img_url.startswith("/"):
+            path = img_url
+        else:
+            path = f"/{img_url}"
+    img_name = os.path.basename(path)
+    request = f"GET {path} HTTP/1.1\r\nHost: {host}\r\nConnection: close\r\n\r\n".encode()
 
-    if not url.startswith("http"):
-        url = url.join(base_url, url)
+    try:
+        soc.connect((host, 80))
+        soc.send(request)
+        response = b""
+        while True:
+            data = soc.recv(buffer_size)
+            if not data:
+                break
+            response += data
+    except Exception as exception:
+        print(f"Failed to retrieve data {img_url}: {exception}")
+
+    header, img_data = response.split(b'\r\n\r\n', 1)
+    if b"200 OK" not in header:
+        print(
+            f"Failed to download {img_url}: Server responded with {header.split(b' ', 2)[1]}")
+
+    with open(img_name, 'wb') as img_file:
+        img_file.write(img_data)
+    print(f"Image {img_name} downloaded successfully!")
 
 
 def main() -> None:
-    host: str = sys.argv[1]
-    port: int = 80
-    # file_name: str = sys.argv[2]
+    host = sys.argv[1]
+    port = int(sys.argv[2])
+    file_name = sys.argv[3]
     buffer_size = 65535
-    response: bytes = f"GET / HTTP/1.1\r\nHost: {host}\r\n\r\n".encode()
+    response = f"GET / HTTP/1.1\r\nHost: {host}\r\nConnection: close\r\n\r\n".encode()
     http_response = get_response_from(host, port, buffer_size, response)
     parsed_response = parse_http_header(http_response)
     display_header(parsed_response)
+    write_to_file(parsed_response, file_name)
+    extracted_image = extract_image_tag(parsed_response["content"])
+    for image in extracted_image:
+        download_image(image, host, buffer_size)
 
 
 if __name__ == "__main__":
