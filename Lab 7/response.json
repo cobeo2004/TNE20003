@@ -1,0 +1,17 @@
+{
+  "status": "200",
+  "message": "OK",
+  "headers": {
+    "Date": "Fri, 29 Sep 2023 04:21:40 GMT",
+    "Server": "Apache/2.4.56 (Unix)",
+    "Content-Location": "index.html.en",
+    "Vary": "negotiate",
+    "TCN": "choice",
+    "Last-Modified": "Sat, 16 Sep 2023 13:28:30 GMT",
+    "ETag": "\"2d-60579e287db80\"",
+    "Accept-Ranges": "bytes",
+    "Content-Length": "45",
+    "Content-Type": "text/html"
+  },
+  "content": "<html><body><h1>It works!</h1></body></html>\n"
+}
