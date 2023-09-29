@@ -51,7 +51,7 @@ def display_header(parsed_header: dict) -> None:
     print(f"HTTP Content:")
     for value, content in parsed_header["headers"].items():
         print(f"{value}: {content}")
-    if status_code != 200:
+    if int(status_code) == 200:
         print("\nHTML Content:")
         print(parsed_header["content"])
     else:
