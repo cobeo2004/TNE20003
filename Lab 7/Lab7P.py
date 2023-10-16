@@ -32,7 +32,7 @@ def get_response_from(host: str, port: int, buffer_size: int, request: bytes) ->
 
 def main() -> None:
     host: str = sys.argv[1]  # Get host's addr from the first argument
-    port: int = sys.argv[2]  # Get host's port from the second argument
+    port: int = int(sys.argv[2])  # Get host's port from the second argument
     buffer_size = 1024 * 8  # Buffer size
     # Bytes-encoded HTTP GET request
     response: bytes = f"GET / HTTP/1.0\r\nHost: {host}\r\n\r\n".encode()

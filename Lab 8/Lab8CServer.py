@@ -2,16 +2,10 @@ import socket
 import argparse
 
 
-def tcp_server_listener(host: str, port: int, buffer_size: int = 1024) -> None:
-    server_soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_soc.bind((host, port))
-    server_soc.listen(5)
-    print("Server is listening on port ", port)
-
+def tcp_handler(connection, address, buffer_size):
     while True:
-        connection, address = server_soc.accept()
-        print("Connected by", address)
-        msg = (connection.recv(buffer_size)).decode('ascii')
+        data = connection.recv(buffer_size)
+        msg = data.decode('ascii')
 
         if not msg.startswith("TNE20003:"):
             err_msg = "TNE20003:E:Invalid Protocol Header"
@@ -29,7 +23,21 @@ def tcp_server_listener(host: str, port: int, buffer_size: int = 1024) -> None:
 
         ack_msg = f"TNE20003:A:{payload}"
         connection.sendall(ack_msg.encode('ascii'))
-        print(f"Sended to {connection.getsockname()} value: {ack_msg}")
+        print(
+            f"Sended to {connection.getsockname()} value: {ack_msg}")
+
+
+def tcp_server_listener(host: str, port: int, buffer_size: int = 1024) -> None:
+    server_soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_soc.bind((host, port))
+    server_soc.listen(5)
+    print("Server is listening on port ", port)
+
+    while True:
+        connection, address = server_soc.accept()
+        print("Connected by", address)
+        tcp_handler(connection, address, buffer_size)
+        connection.close()
 
 
 def main() -> None:

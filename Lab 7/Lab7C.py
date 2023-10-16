@@ -104,14 +104,16 @@ def display_header(parsed_header: dict) -> None:
 
 
 def main() -> None:
-    host: str = sys.argv[1]
-    port: int = int(sys.argv[2])
-    # file_name: str = sys.argv[3]
-    buffer_size = 65535
+    host: str = sys.argv[1]  # Get host's addr from the first argument
+    port: int = int(sys.argv[2])  # Get host's port from the second argument
+    buffer_size = 65535  # Buffer size
+    # HTTP header in byted
     response: bytes = f"GET / HTTP/1.1\r\nHost: {host}\r\n\r\n".encode()
+    # Save the http response to the variable
     http_response = get_response_from(host, port, buffer_size, response)
+    # Parse the response into dictionary
     parsed_response = parse_http_header(http_response)
-    display_header(parsed_response)
+    display_header(parsed_response)  # Display it
     # print(write_to_file(parsed_response, file_name))
 
 
