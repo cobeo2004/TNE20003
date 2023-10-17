@@ -11,7 +11,7 @@ def tcp_client_listener(host: str, port: int, buffer_size: int = 1024) -> None:
         if msg.lower() == 'exit':
             break
 
-        client_soc.sendall(f"{msg}".encode('ascii'))
+        client_soc.sendall(msg.encode('ascii'))
 
         data = client_soc.recv(buffer_size)
         print(f"Received from server : {data.decode('ascii')}")
