@@ -5,7 +5,7 @@ from random import randint
 import json
 
 
-class MQTTGui(tk.Tk):
+class SimonMQTTGui(tk.Tk):
     def __init__(self):
         super().__init__()
 
@@ -140,10 +140,7 @@ class MQTTGui(tk.Tk):
                                     "Successfully connected to server, Code: " + str(rc))
                 self._connect_status(True)
                 self.is_connected = True
-            if rc == 1:
-                messagebox.showerror("Failed",
-                                     "Failed to connect to server, code: " + str(rc))
-                self._connect_status(False)
+            else:
                 self.is_connected = False
 
         host = self.host_entry.get()
@@ -155,8 +152,12 @@ class MQTTGui(tk.Tk):
                 self.mqtt_client.username_pw_set(
                     self.user_name_entry.get(), self.user_pwd_entry.get())
             self.mqtt_client.on_connect = on_connect
-            self.mqtt_client.connect(host, port, 60)
-            self.mqtt_client.loop_start()  # Start the loop to process incoming messages
+            try:
+                self.mqtt_client.connect(host, port, 60)
+                self.mqtt_client.loop_start()  # Start the loop to process incoming messages
+            except ConnectionRefusedError and TimeoutError as conn_err:
+                messagebox.showerror("Error", f"Connection error: {conn_err}")
+                self.is_connected = False
 
     def publish_message(self):
         def on_publish(client, userdata, mid):
@@ -236,5 +237,5 @@ class MQTTGui(tk.Tk):
 
 
 if __name__ == "__main__":
-    app = MQTTGui()
+    app = SimonMQTTGui()
     app.mainloop()

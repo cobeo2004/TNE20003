@@ -195,8 +195,9 @@ def main() -> None:
         "--port", help="The port of the server, default is 80", default=80)  # Port argument, default is 80
     arguments = argument_parser.parse_args()  # parse the args
     buffer_size = 65535
+    request: bytes = f"GET / HTTP/1.0\r\nHost: {arguments.host}\r\n\r\n".encode()
     http_response = get_response_from(
-        arguments.host, int(arguments.port), buffer_size)  # Get the response header from website
+        arguments.host, int(arguments.port), buffer_size, request)  # Get the response header from website
     parsed_response = parse_http_header(http_response)
     display_header(parsed_response)  # Parse and display the response header
     # extract the image from the content of the HTTP header
