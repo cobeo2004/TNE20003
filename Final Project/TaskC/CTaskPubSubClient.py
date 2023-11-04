@@ -9,8 +9,8 @@ user_information = {
     "password": "103819212",
     "message": ["haha", "hihi", "huhu", "hohe", "heko", "huha", "halal", "HSP", "erik", "ten", "hafg"]
 }
-topic = [("103819212/my_private_topic", 0), ("public/#", 0)]
-publish_topic = "103819212/my_private_topic"
+topic = [("public/103819212/my_private_topic", 0), ("public/#", 0)]
+publish_topic = "public/103819212/my_private_topic"
 
 
 def connect_mqtt() -> mqtt.Client:

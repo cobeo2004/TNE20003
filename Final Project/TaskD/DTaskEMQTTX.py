@@ -169,7 +169,7 @@ class SimonMQTTGui(tk.Tk):
         else:
             self.mqtt_client.on_publish = on_publish
 
-            self.publish_topics = self.topic_entry.get().split(",")
+            self.publish_topics = self.topic_entry.get().split(", ")
             if len(self.publish_topics) == 0:
                 messagebox.showerror("Error", "Please put a topic to publish")
             else:

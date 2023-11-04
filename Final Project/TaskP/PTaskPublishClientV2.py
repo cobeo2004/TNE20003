@@ -4,7 +4,7 @@ import random
 
 broker = 'rule28.i4t.swin.edu.au'
 user_information = {
-    "client_identifier": "Publisher",
+    "client_identifier": "Simon-Publisher",
     "username": "103819212",
     "password": "103819212",
     "message": ["haha", "hihi", "huhu", "hohe", "heko", "huha", "halal", "HSP", "erik", "ten", "hafg"]

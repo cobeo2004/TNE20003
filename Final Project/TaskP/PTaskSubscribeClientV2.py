@@ -3,7 +3,7 @@ import time
 
 broker = 'rule28.i4t.swin.edu.au'
 user_information = {
-    "client_identifier": "Subscriber",
+    "client_identifier": "Simon-Subscriber",
     "username": "103819212",
     "password": "103819212",
 }
@@ -11,7 +11,7 @@ topic = [("103819212/my_private_topic", 0), ("public/#", 0)]
 
 
 def connect_mqtt() -> mqtt.Client:
-    global broker, user_information
+    global broker, user_information, topic
 
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
@@ -43,8 +43,8 @@ def subscribe(client: mqtt.Client) -> None:
         print(f"QoS: {msg.qos}")
         print(f"Retain: {msg.retain}")
         print("=========================================\n\n")
-    client.subscribe(topic)
     client.on_message = on_message
+    client.subscribe(topic)
 
 
 def main() -> None:

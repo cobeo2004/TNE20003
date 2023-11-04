@@ -10,10 +10,12 @@ class SimonMQTTGui(tk.Tk):
         super().__init__()
 
         self.title("Simon EMQTTX")
-        self.geometry("430x850")
+        self.geometry("430x870")
         self.publish_topics = []
+        self.default_sub_topic = [("public/#", 0)]
         self.subscirbe_topics = []
-        self.mqtt_client = mqtt.Client(f"simonEMQTTX-{randint(100, 12892312)}")
+        self.client_name = ""
+        self.mqtt_client = None
         self.is_connected: bool = False
         self.resizable(False, False)
         # GUI Widgets
@@ -56,9 +58,16 @@ class SimonMQTTGui(tk.Tk):
         self.user_pwd_entry.grid(
             row=3, column=1, sticky=tk.W + tk.E + tk.N + tk.S, padx=5, pady=5)
         self.user_pwd_entry.insert(0, "103819212")
+
+        self.client_label = ttk.Label(self.broker_frame, text="Client Name")
+        self.client_label.grid(
+            row=4, column=0, sticky=tk.W + tk.E + tk.N + tk.S, padx=5, pady=5)
+        self.client_entry = ttk.Entry(self.broker_frame)
+        self.client_entry.grid(row=4, column=1, padx=5, pady=5)
+
         self.connect_btn = ttk.Button(
             self.broker_frame, text="Connect", command=self.connect_broker)
-        self.connect_btn.grid(row=4, column=0, columnspan=2, pady=10)
+        self.connect_btn.grid(row=5, column=0, columnspan=2, pady=10)
 
         # Publisher
         self.pub_frame = ttk.LabelFrame(
@@ -133,25 +142,30 @@ class SimonMQTTGui(tk.Tk):
             self.connect_status.config(
                 text="Not Connected", bg="gray51", foreground="red")
 
-    def connect_broker(self):
-        def on_connect(client, userdata, flags, rc):
-            if rc == 0:
-                messagebox.showinfo("Successful",
-                                    "Successfully connected to server, Code: " + str(rc))
-                self._connect_status(True)
-                self.is_connected = True
-            else:
-                self.is_connected = False
+    def _on_connect(self, client, userdata, flags, rc):
+        if rc == 0:
+            messagebox.showinfo("Successful",
+                                "Successfully connected to server, Code: " + str(rc))
+            self._connect_status(True)
+            self.is_connected = True
+        else:
+            self.is_connected = False
 
+    def connect_broker(self):
         host = self.host_entry.get()
         port = int(self.port_entry.get())
+        client = self.client_entry.get()
         if not host and not port:
             messagebox.showerror("Error", "Please input host and port")
+        elif not client:
+            messagebox.showerror("Error", "Please input client name")
         else:
+            self.client_name = f"SimonEMQTTX-center-{client}"
+            self.mqtt_client = mqtt.Client(self.client_name)
             if(self.user_name_entry.get() != "" and self.user_pwd_entry.get() != ""):
                 self.mqtt_client.username_pw_set(
                     self.user_name_entry.get(), self.user_pwd_entry.get())
-            self.mqtt_client.on_connect = on_connect
+            self.mqtt_client.on_connect = self._on_connect
             try:
                 self.mqtt_client.connect(host, port, 60)
                 self.mqtt_client.loop_start()  # Start the loop to process incoming messages
@@ -159,17 +173,14 @@ class SimonMQTTGui(tk.Tk):
                 messagebox.showerror("Error", f"Connection error: {conn_err}")
                 self.is_connected = False
 
-    def publish_message(self):
-        def on_publish(client, userdata, mid):
-            for topic in self.publish_topics:
-                messagebox.showinfo(
-                    "Success", f"Published message {mid}: {topic}")
+    def _on_publish(self, client, userdata, mid):
+        pass
 
+    def publish_message(self):
         if self.is_connected == False:
             messagebox.showerror("Error, You have to connect to an MQTT first")
         else:
-            self.mqtt_client.on_publish = on_publish
-
+            self.mqtt_client.on_publish = self._on_publish
             self.publish_topics = self.topic_entry.get().split(",")
             if len(self.publish_topics) == 0:
                 messagebox.showerror("Error", "Please put a topic to publish")
@@ -180,60 +191,68 @@ class SimonMQTTGui(tk.Tk):
                     messagebox.showerror("Error", "Please put a message")
                 else:
                     for topic in self.publish_topics:
-                        self.mqtt_client.publish(topic, message, 0)
+                        result = self.mqtt_client.publish(topic, message, 0)
+                        if result[0] == 0:
+                            messagebox.showinfo(
+                                "Success", f"Published message into topic {topic}")
+                        else:
+                            messagebox.showerror(
+                                "Failed", f"Failed to publish topic to {topic}")
+
+    def _on_message(self, client, userdata, msg):
+        self.sub_message_text.insert(tk.END,
+                                     msg.topic + ": " + msg.payload.decode("utf-8") + f"({msg.retain})")
+        if msg.topic == "public/103819212/fan/status":
+            fan_temperature = json.loads(
+                msg.payload.decode("utf-8"))["temperature"]
+            fan_status = json.loads(msg.payload.decode("utf-8"))["status"]
+
+            if fan_temperature > 30 and fan_status != "on":
+                result = self.mqtt_client.publish(
+                    "public/103819212/fan/control", "FAN ON", 0)
+                if result[0] == 0:
+                    messagebox.showinfo(
+                        "Success", "Fan has been turned on")
+                else:
+                    messagebox.showerror("Failed", "Could not send request")
+            if fan_temperature < 20 and fan_status == "on":
+                result = self.mqtt_client.publish(
+                    "public/103819212/fan/control", "FAN OFF", 0)
+                if result[0] == 0:
+                    messagebox.showinfo("Success", "Fan is turned off")
+                else:
+                    messagebox.showerror(
+                        "Failed", "Can not send the request")
+
+        if msg.payload.decode("utf-8").lower() == "fire":
+            messagebox.showwarning(
+                "Warning", "The broker is having problem thus disconnect all of the clients!")
+            self._connect_status(False)
+            self.is_connected = False
+            self.mqtt_client.disconnect()
 
     def subscribe_topic(self):
-        def on_message(client, userdata, msg):
-            self.sub_message_text.insert(tk.END,
-                                         msg.topic + ": " + msg.payload.decode("utf-8") + f"({msg.retain})")
-            if msg.topic == "public/103819212/signal/status":
-                signal_json = json.loads(msg.payload.decode("utf-8"))
-                if str.lower(signal_json["status"]) == "danger" and str.lower(signal_json["trip-arm"]) == "de-arm":
-                    will_raise = messagebox.askyesno("Alert", "Do you want to raise trip arm for signal " +
-                                                     signal_json["signal"] + " status " + signal_json["status"])
-                    if will_raise:
-                        payload_raise = {
-                            "signal": signal_json["signal"],
-                            "status": signal_json["status"],
-                            "trip-arm": "arm"
-                        }
-                        self.mqtt_client.publish(
-                            "public/103819212/signal/status", json.dumps(payload_raise))
-                        messagebox.showinfo(
-                            "Success", "Trip arm of signal " + signal_json["signal"] + " has been raised")
-                    else:
-                        messagebox.showwarning("Warning",
-                                               "This will result in train could pass at signal " + signal_json["signal"] + " without any safeworkings!")
-                if str.lower(signal_json["status"]) != "danger" and str.lower(signal_json["trip-arm"]) == "arm":
-                    will_lower = messagebox.askyesno("Alert", "Do you want to lower trip arm for signal " +
-                                                     signal_json["signal"] + " status " + signal_json["status"])
-                    if will_lower:
-                        payload_lower = {
-                            "signal": signal_json["signal"],
-                            "status": signal_json["status"],
-                            "trip-arm": "de-arm"
-                        }
-                        self.mqtt_client.publish(
-                            "public/103819212/signal/status", json.dumps(payload_lower))
-                        messagebox.showinfo(
-                            "Success", "Trip arm of signal " + signal_json["signal"] + " has been lowered")
-                    else:
-                        messagebox.showwarning("Warning",
-                                               "This will result in train could not pass at signal " + signal_json["signal"])
+
         if self.is_connected == False:
             messagebox.showerror("Error, You have to connect to an MQTT first")
         else:
+            self.mqtt_client.on_message = self._on_message
             if not self.sub_topic_entry.get():
                 messagebox.showerror(
                     "Error", "Please put a topic to subscribe")
             else:
+                self.mqtt_client.subscribe(self.default_sub_topic)
+                messagebox.showinfo(
+                    "Subscribe", f"The global public topic has been subscribed!")
                 for topic in self.sub_topic_entry.get().split(", "):
                     self.subscirbe_topics.append((topic, 0))
 
                 self.mqtt_client.subscribe(self.subscirbe_topics)
                 messagebox.showinfo(
                     "Subscribed", f"Subscribed to {[topic for topic in self.subscirbe_topics]}")
-                self.mqtt_client.on_message = on_message
+                self.mqtt_client.on_message = self._on_message
+            # self.mqtt_client.subscribe(self.default_sub_topic)
+            # messagebox.showinfo("Subscribe", "Start Guarding")
 
 
 if __name__ == "__main__":
